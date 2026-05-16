@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 
 const app = express();
 app.use(cors());
@@ -17,14 +17,19 @@ app.post('/api/autofill', async (req, res) => {
 
   try {
     browser = await chromium.launch({ 
-      args: ['--single-process', '--no-sandbox', '--disable-setuid-sandbox'],
-      headless: true 
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process'
+      ],
+      headless: true
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Get all form fields
     const fields = await page.evaluate(() => {
       const inputs = document.querySelectorAll('input, textarea, select');
       return Array.from(inputs).map((el, i) => ({
@@ -48,9 +53,7 @@ app.post('/api/autofill', async (req, res) => {
       }));
     });
 
-    // Match fields with profile
     const fillMap = [];
-
     fields.forEach(field => {
       const combined = `${field.id} ${field.name} ${field.placeholder} ${field.label}`.toLowerCase();
       let value = null;
@@ -71,22 +74,24 @@ app.post('/api/autofill', async (req, res) => {
       if (value) fillMap.push({ index: field.index, value });
     });
 
-    // Fill the fields
     for (const fill of fillMap) {
       try {
-        const input = await page.$(`input:nth-of-type(${fill.index + 1}), textarea:nth-of-type(${fill.index + 1})`);
-        if (input) {
-          await input.fill(fill.value.toString());
-        }
+        await page.evaluate(({ index, value }) => {
+          const inputs = document.querySelectorAll('input, textarea, select');
+          const el = inputs[index];
+          if (el) {
+            el.value = value;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }, fill);
       } catch (e) {
         console.log('Field fill error:', e.message);
       }
     }
 
-    // Take screenshot
     const screenshot = await page.screenshot({ type: 'png', fullPage: false });
     const base64 = screenshot.toString('base64');
-
     await browser.close();
 
     res.json({
@@ -108,4 +113,4 @@ function matches(text, keywords) {
 
 app.get('/', (req, res) => res.json({ status: 'Playwright service running!' }));
 
-app.listen(3001, () => console.log('Playwright service on port 3001')); 
+app.listen(3001, () => console.log('Playwright service on port 3001'));
