@@ -1,0 +1,31 @@
+name: AutoFill Job Form
+
+on:
+  repository_dispatch:
+    types: [autofill]
+
+jobs:
+  autofill:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Autofill
+        run: node autofill.js
+        env:
+          JOB_URL: ${{ github.event.client_payload.url }}
+          PROFILE: ${{ toJson(github.event.client_payload.profile) }}
+          CALLBACK_URL: ${{ github.event.client_payload.callbackUrl }}
