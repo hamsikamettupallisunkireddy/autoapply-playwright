@@ -17,14 +17,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd playwright-service
           npm install
           npx playwright install --with-deps chromium
 
       - name: Run AutoFill
-        run: |
-          cd playwright-service
-          node autofill.js
+        run: node autofill.js
         env:
           JOB_URL: ${{ github.event.client_payload.url }}
           PROFILE: ${{ toJson(github.event.client_payload.profile) }}
