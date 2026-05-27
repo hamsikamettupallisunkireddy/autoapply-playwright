@@ -17,11 +17,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install
-          npx playwright install --with-deps chromium
+          npm ci
+          npx playwright install chromium --with-deps
 
       - name: Run AutoFill
         run: node autofill.js
         env:
           JOB_URL: ${{ github.event.client_payload.url }}
-          PROFILE: ${{ toJson(github.event.client_payload.profile) }} 
+          PROFILE: ${{ toJson(github.event.client_payload.profile) }}
