@@ -24,4 +24,4 @@ jobs:
         run: node autofill.js
         env:
           JOB_URL: ${{ github.event.client_payload.url }}
-          PROFILE: ${{ toJson(github.event.client_payload.profile) }}
+          PROFILE: ${{ toJson(github.event.client_payload.profile) }} 
