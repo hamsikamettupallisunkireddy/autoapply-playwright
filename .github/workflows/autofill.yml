@@ -25,3 +25,9 @@ jobs:
         env:
           JOB_URL: ${{ github.event.client_payload.url }}
           PROFILE: ${{ toJson(github.event.client_payload.profile) }}
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: autofill-screenshot
+          path: screenshot.png

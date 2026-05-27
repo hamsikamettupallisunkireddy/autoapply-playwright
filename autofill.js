@@ -84,6 +84,7 @@ async function main() {
 
     console.log('FILLED_COUNT:' + fillMap.length);
     console.log('SCREENSHOT:' + base64);
+    require('fs').writeFileSync('screenshot.png', screenshot);
 
     if (callbackUrl) {
       const https = require('https');
