@@ -1,4 +1,11 @@
 const { chromium } = require('playwright');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: 'dshura0e1',
+  api_key: '853549295249996',
+  api_secret: 'Cl1GJp1u9D_UmQfsDuBMmtEDrG8'
+});
 
 async function main() {
   const url = process.env.JOB_URL;
@@ -15,7 +22,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
-    
+
     console.log('Opening:', url);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
@@ -80,19 +87,26 @@ async function main() {
     }
 
     const screenshot = await page.screenshot({ type: 'png', fullPage: false });
-    const base64 = screenshot.toString('base64');
-
-    console.log('FILLED_COUNT:' + fillMap.length);
-    console.log('SCREENSHOT:' + base64);
     require('fs').writeFileSync('screenshot.png', screenshot);
 
+    // Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload('screenshot.png', {
+      folder: 'autoapply',
+      public_id: `screenshot_${Date.now()}`
+    });
+
+    const screenshotUrl = uploadResult.secure_url;
+    console.log('FILLED_COUNT:' + fillMap.length);
+    console.log('SCREENSHOT_URL:' + screenshotUrl);
+
+    // Send back to Dashboard
     if (callbackUrl) {
       const https = require('https');
       const http = require('http');
       const data = JSON.stringify({
         success: true,
         filled: fillMap.length,
-        screenshot: `data:image/png;base64,${base64}`
+        screenshotUrl: screenshotUrl
       });
 
       const urlObj = new URL(callbackUrl);
